@@ -5,8 +5,10 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"strings"
 )
@@ -19,10 +21,30 @@ var quizCmd = &cobra.Command{
 		at a time in a timed quiz.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		correctCount := 0
-		questions := map[string]string{
-			"1+1":  "2",
-			"3+10": "13",
-			"5+3":  "8",
+		questions := make(map[string]string)
+
+		// Open
+		csvFile, err := os.Open("problems.csv")
+		if err != nil {
+			fmt.Println("An error occurred while opening csv.", err)
+			return
+		}
+
+		r := csv.NewReader(csvFile)
+
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				fmt.Println("An error occurred reading from csv.", err)
+				return
+			}
+
+			// Add question as key and answer as value to questions map
+			questions[record[0]] = record[1]
 		}
 
 		for k, v := range questions {
@@ -32,7 +54,7 @@ var quizCmd = &cobra.Command{
 			// ReadString will block until the delimiter is entered
 			input, err := reader.ReadString('\n')
 			if err != nil {
-				fmt.Println("An error occured while reading input.", err)
+				fmt.Println("An error occurred while reading input.", err)
 				return
 			}
 
